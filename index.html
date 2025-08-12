@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Calendário Cirúrgico</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f4; }
+  header { background: #0b3d91; color: #fff; padding: 15px; text-align: center; }
+  table { border-collapse: collapse; width: 100%; margin-top: 10px; background: white; }
+  th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+  th { background-color: #0b3d91; color: white; position: sticky; top: 0; }
+  input, select { width: 100%; padding: 5px; box-sizing: border-box; }
+  .toolbar { margin: 10px; }
+  .toolbar button { padding: 8px 12px; margin-right: 5px; background: #0b3d91; color: #fff; border: none; cursor: pointer; }
+  .toolbar button:hover { background: #0954c0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Calendário Cirúrgico</h1>
+</header>
+<div class="toolbar">
+  <button onclick="addRow()">Adicionar Linha</button>
+  <button onclick="exportCSV()">Exportar CSV</button>
+  <button onclick="saveLocal()">Salvar (navegador)</button>
+  <button onclick="loadLocal()">Carregar</button>
+  <button onclick="clearTable()">Limpar</button>
+</div>
+<table id="calendarTable">
+  <thead>
+    <tr>
+      <th>Data</th>
+      <th>Nome do Paciente</th>
+      <th>Idade</th>
+      <th>Diagnóstico</th>
+      <th>Hospital</th>
+      <th>Convênio</th>
+      <th>Tipo de Anestesia</th>
+      <th>Procedimento</th>
+      <th>Fornecedor do Material</th>
+      <th>TCLE Assinado</th>
+      <th>Pré-op OK</th>
+      <th>ECO Transesofágico</th>
+      <th>Necessidade de Scopia</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+<script>
+function addRow(data = []) {
+  const tbody = document.querySelector('#calendarTable tbody');
+  const tr = document.createElement('tr');
+  const columns = [
+    { type: 'date' },
+    { type: 'text' },
+    { type: 'number' },
+    { type: 'text' },
+    { type: 'text' }, // Hospital
+    { type: 'text' }, // Convênio
+    { type: 'select', options: ['', 'Local', 'Geral', 'Sedação', 'Local + Sedação'] },
+    { type: 'text' },
+    { type: 'text' },
+    { type: 'select', options: ['', 'Assinado', 'Não Assinado'] },
+    { type: 'select', options: ['', 'OK', 'Pendência'] },
+    { type: 'select', options: ['', 'Sim', 'Não'] },
+    { type: 'select', options: ['', 'Sim', 'Não'] }
+  ];
+  columns.forEach((col, idx) => {
+    const td = document.createElement('td');
+    let input;
+    if (col.type === 'select') {
+      input = document.createElement('select');
+      col.options.forEach(opt => {
+        const option = document.createElement('option');
+        option.value = opt;
+        option.textContent = opt;
+        input.appendChild(option);
+      });
+    } else {
+      input = document.createElement('input');
+      input.type = col.type;
+    }
+    if (data[idx]) input.value = data[idx];
+    td.appendChild(input);
+    tr.appendChild(td);
+  });
+  tbody.appendChild(tr);
+}
+function exportCSV() {
+  const rows = document.querySelectorAll('#calendarTable tr');
+  const csv = [];
+  rows.forEach(row => {
+    const cols = row.querySelectorAll('td, th');
+    const data = [];
+    cols.forEach(col => data.push(col.querySelector('input,select')?.value || col.innerText));
+    csv.push(data.join(','));
+  });
+  const csvFile = new Blob([csv.join('\n')], { type: 'text/csv' });
+  const downloadLink = document.createElement('a');
+  downloadLink.download = 'calendario_cirurgico.csv';
+  downloadLink.href = window.URL.createObjectURL(csvFile);
+  downloadLink.click();
+}
+function saveLocal() {
+  const rows = document.querySelectorAll('#calendarTable tbody tr');
+  const data = [];
+  rows.forEach(row => {
+    const cols = row.querySelectorAll('input,select');
+    data.push(Array.from(cols).map(input => input.value));
+  });
+  localStorage.setItem('calendarioCirurgico', JSON.stringify(data));
+}
+function loadLocal() {
+  const data = JSON.parse(localStorage.getItem('calendarioCirurgico') || '[]');
+  document.querySelector('#calendarTable tbody').innerHTML = '';
+  data.forEach(row => addRow(row));
+}
+function clearTable() {
+  document.querySelector('#calendarTable tbody').innerHTML = '';
+  localStorage.removeItem('calendarioCirurgico');
+}
+</script>
+</body>
+</html>
